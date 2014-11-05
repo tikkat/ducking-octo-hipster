@@ -26,7 +26,8 @@ It takes k+1 steps to calculate the function. (O(k))
 power1 :: Int -> Int -> Int
 power1 n k | k == 0		= 1
 	 	   | k < 0 		= error "power: negative argument"
-		   | otherwise 	= product (replicate k n) --(take k (repeat n))
+		   | otherwise 	= product (replicate k n) 
+		   			  -- (take k (repeat n)) would work as well
 
 -- PART 3:
 
@@ -45,7 +46,8 @@ n = 5, k = 3	== 125
 n = 3, k = 5	== 243
 n = 0, k = 5	== 0
 n = 5, k = 0	== 1
-n = 5, k = -1	== error	(According to information in the Google Group we shouldn't test this)
+n = 5, k = -1	== error	
+(According to information in the Google Group we shouldn't test negatives)
 n = -2, k = 3 	== -8
 n = -2, k = 2 	== 4
 
