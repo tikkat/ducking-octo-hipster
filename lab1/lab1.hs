@@ -70,7 +70,7 @@ test_powers :: Bool
 test_powers = length ["Test case failed"
                 | n <- [5, 3, 0, 5, (-2), (-2)], 
                   k <- [3, 5, 5, 0, 3, 2],
-                  prop_powers n k == False] == 0
+                  not prop_powers n k] == 0
 
 
 -- We reuse the prop_powers function and always makes sure that k is positive.

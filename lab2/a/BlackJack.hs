@@ -28,13 +28,15 @@ numberOfAces Empty = 0
 numberOfAces (Add (Card r _) h) | r == Ace      = 1 + numberOfAces h
                                 | otherwise     = numberOfAces h
 
-valueHelper :: Hand -> Integer
-valueHelper Empty = 0
-valueHelper (Add c h) = valueCard c + valueHelper h
 
 value :: Hand -> Integer
 value h | valueHelper h > 21 = valueHelper h - (numberOfAces h * 10)
 		| otherwise = valueHelper h
+	where
+		valueHelper :: Hand -> Integer
+		valueHelper Empty = 0
+		valueHelper (Add c h) = valueCard c + valueHelper h
+
 
 gameOver :: Hand -> Bool
 gameOver h  | value h > 21 = True
