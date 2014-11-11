@@ -13,24 +13,36 @@ import Test.QuickCheck
 	#5	== 2
 -}
 
--- Todo: Document and prop_testing
-
+-- We define a "variable" empty that returns an empty hand
 empty :: Hand
 empty = Empty
 
+{-
+The valueRank function checks the value of a specific rank that you give it.
+We have added a guard for the numeric values that only accepts values between 2
+and 10. We do however believe that it would be better to have this check when 
+you create a Card.
+-}
 valueRank :: Rank -> Integer
 valueRank (Numeric n)   = n
 valueRank Ace           = 11
 valueRank _             = 10
 
+-- We only care about the rank when we evaluate the value of a Card, we therefore
+-- call for the valueRank function
 valueCard :: Card -> Integer
 valueCard (Card r _) = valueRank r
 
+-- Recursively count the number of aces in the Hand, stop when the hand is Empty
 numberOfAces :: Hand -> Integer
 numberOfAces Empty = 0
 numberOfAces (Add (Card r _) h) | r == Ace      = 1 + numberOfAces h
                                 | otherwise     = numberOfAces h
 
+{-
+Count the value of the Hand, take in consideration that the Ace is evaluated to 11
+if n =< 21 and 1 if n > 21, where n is the sum of all ranks
+-}
 value :: Hand -> Integer
 value h | valueHelper h > 21 = valueHelper h - (numberOfAces h * 10)
 		| otherwise = valueHelper h
@@ -50,13 +62,22 @@ winner g b  | gameOver g 			= Bank
             | value b >= value g 	= Bank
             | otherwise 			= Guest
 
+-- Function that takes two hands and puts the first hand on top of the other one
+infixr 2 <+
 (<+) :: Hand -> Hand -> Hand
-Empty              <+ h2 = h2
-(Add (Card r s) h) <+ h2 = (Add (Card r s) (h <+ h2))
+Empty   <+ h2 = h2
+Add c h <+ h2 = Add c (h <+ h2)
 
+
+{-------------	PROP TESTS	-------------}
+
+
+-- Test to see if the function <+ is associative
 prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
 prop_onTopOf_assoc p1 p2 p3 = p1 <+ (p2 <+ p3) == (p1 <+ p2) <+ p3
 
+-- Test to see if the size of the two hands added together is the same as the 
+-- size of the combined hand
 prop_onTopOf_size :: Hand -> Hand -> Bool
 prop_onTopOf_size p1 p2 = size p1 + size p2 == size (p1 <+ p2)
 
@@ -75,5 +96,5 @@ fullDeck = fullSuit Hearts <+ fullSuit Spades <+ fullSuit Diamonds <+ fullSuit C
 
 draw :: Hand -> Hand -> (Hand, Hand)
 draw Empty _ = error "draw: The deck is empty."
-draw (Add (Card d_r d_s) d_h) Empty = (d_h, (Add (Card d_r d_s) Empty))
-draw (Add (Card d_r d_s) d_h) (Add (Card h_r h_s) h_h) = (d_h, (Add (Card d_r d_s) (Add (Card h_r h_s) h_h)))
+draw (Add c h) Empty = (h, (Add c Empty))
+draw (Add d_c d_h) h = (d_h, (Add d_c h))
