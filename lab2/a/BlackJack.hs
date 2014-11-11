@@ -58,3 +58,38 @@ winner g b  | gameOver g 			= Bank
             | gameOver b 			= Guest
             | value b >= value g 	= Bank
             | otherwise 			= Guest
+
+
+-- Function that takes two hands and puts the first hand on top of the other one
+(<+) :: Hand -> Hand -> Hand
+infixr 2 <+
+
+Empty		<+ Add c h			= Add c h
+Add c h 	<+ second	 		= Add c (h <+ second)
+
+-- Test to see if the function <+ is associative
+prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
+prop_onTopOf_assoc p1 p2 p3 	= (p1 <+ (p2 <+ p3)) == ((p1 <+ p2) <+ p3) 
+
+-- Test to see if the size of the two hands added together is the same as the 
+-- size of the combined hand
+prop_size_onTopOf :: Hand -> Hand -> Bool
+prop_size_onTopOf h1 h2		= size h1 + size h2 == size (h1 <+ h2)
+
+-- Test hands 
+first 		= Add (Card (Numeric 2) Hearts) (Add (Card Jack Spades) Empty)
+second		= Add (Card (Numeric 6) Hearts) (Add (Card Ace Spades) Empty)
+third		= Add (Card (Numeric 8) Hearts) (Add (Card Queen Spades) (Add (Card (Numeric 8) Hearts) Empty))
+
+
+
+
+
+
+
+
+
+
+
+
+
