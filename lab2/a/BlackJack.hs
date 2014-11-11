@@ -49,8 +49,6 @@ value h | valueHelper h > 21 = valueHelper h - (numberOfAces h * 10)
 		valueHelper Empty = 0
 		valueHelper (Add c h) = valueCard c + valueHelper h
 
--- Self-explanatory; stop game if the value of the hand that you gives the function
--- exceeds 21
 gameOver :: Hand -> Bool
 gameOver h  | value h > 21 = True
             | otherwise = False
