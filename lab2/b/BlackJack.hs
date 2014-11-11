@@ -24,9 +24,9 @@ and 10. We do however believe that it would be better to have this check when
 you create a Card.
 -}
 valueRank :: Rank -> Integer
-valueRank (Numeric n)   = n
-valueRank Ace           = 11
-valueRank _             = 10
+valueRank (Numeric n) | 1 < n && n <= 10	= n
+valueRank Ace           					= 11
+valueRank _             					= 10
 
 -- We only care about the rank when we evaluate the value of a Card, we therefore
 -- call for the valueRank function
@@ -47,10 +47,10 @@ value :: Hand -> Integer
 value h | valueHelper h > 21 = valueHelper h - (numberOfAces h * 10)
 		| otherwise = valueHelper h
 	where
+		-- Helper function to sum all the ranks of the cards
 		valueHelper :: Hand -> Integer
 		valueHelper Empty = 0
 		valueHelper (Add c h) = valueCard c + valueHelper h
-
 
 gameOver :: Hand -> Bool
 gameOver h  | value h > 21 = True
