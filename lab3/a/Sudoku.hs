@@ -5,19 +5,6 @@ import Test.QuickCheck
 data Sudoku = Sudoku { rows :: [[Maybe Int]] }
 	deriving (Show, Eq)
 
-{-example :: Sudoku
-example = 	Sudoku [
-				[Just 3, Just 6, Nothing,Nothing,Just 7, Just 1, Just 2, Nothing,Nothing],
-				[Nothing,Just 5, Nothing,Nothing,Nothing,Nothing,Just 1, Just 8, Nothing],
-				[Nothing,Nothing,Just 9, Just 2, Nothing,Just 4, Just 7, Nothing,Nothing],
-				[Nothing,Nothing,Nothing,Nothing,Just 1, Just 3, Nothing,Just 2, Just 8],
-				[Just 4, Nothing,Nothing,Just 5, Nothing,Just 2, Nothing,Nothing,Just 9],
-				[Just 2, Just 7, Nothing,Just 4, Just 6, Nothing,Nothing,Nothing,Nothing],
-				[Nothing,Nothing,Just 5, Just 3, Nothing,Just 8, Just 9, Nothing,Nothing],
-				[Nothing,Just 8, Just 3, Nothing,Nothing,Nothing,Nothing,Just 6, Nothing],
-				[Nothing,Nothing,Just 7, Just 6, Just 9, Nothing,Nothing,Just 4, Just 3]
-  			]-}
-
 -- allBlankSudoku is a sudoku with just blanks
 allBlankSudoku :: Sudoku
 allBlankSudoku = Sudoku $ replicate 9 $ replicate 9 Nothing
@@ -37,7 +24,20 @@ printSudoku s = putStrLn $ unlines [[if isNothing column then '.' else chr (48 +
 -- readSudoku file reads from the file, and either delivers it, 
 -- or stops if the file did not contain a sudoku
 readSudoku :: FilePath -> IO Sudoku
-readSudoku f = undefined
+readSudoku f =
+	do
+		s <- getLines f
+		if isSudoku s
+			then
+				return s
+			else do
+				putStrLn "Program error: Not a valid Sudoku."
+				return allBlankSudoku
+	where
+		getLines :: FilePath -> IO Sudoku
+		getLines f = do
+			content <- readFile f
+			return (Sudoku [[if a == '.' then Nothing else Just (ord a - 48) | a <- k] | k <- lines content])
 
 -- cell generates an arbitrary cell in a Sudoku
 cell :: Gen (Maybe Int)
