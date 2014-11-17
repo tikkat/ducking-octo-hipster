@@ -153,7 +153,7 @@ prop_shuffle_size g h = size h == size (shuffle g h)
 
 {-------------	FINAL	-------------} 
 
-{-implementation = Interface {
+implementation = Interface {
 	iEmpty 		= empty,
 	iFullDeck 	= fullDeck,
 	iValue 		= value,
@@ -165,4 +165,4 @@ prop_shuffle_size g h = size h == size (shuffle g h)
 }
 
 main :: IO ()
-main = runGame implementation-}
+main = runGame implementation
