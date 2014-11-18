@@ -49,8 +49,8 @@ value h | valueHand > 21 = valueHand - (numberOfAces h * 10)
 		where
 			-- Helper function to sum all the ranks of the cards
 			valueHelper :: Hand -> Integer
-			valueHelper Empty = 0
-			valueHelper (Add c h) = valueCard c + valueHelper h
+			valueHelper Empty 		= 0
+			valueHelper (Add c h)	= valueCard c + valueHelper h
 
 -- A function checking if a hand is busted, i.e. a value over 21
 gameOver :: Hand -> Bool
@@ -80,7 +80,7 @@ fullDeck = fullSuit 2 Hearts <+ fullSuit 2 Spades <+
 		fullSuit 13 s 	= Add (Card King s) (fullSuit 14 s)
 		fullSuit 12 s 	= Add (Card Queen s) (fullSuit 13 s)
 		fullSuit 11 s 	= Add (Card Jack s) (fullSuit 12 s)
-		fullSuit n s 	= Add (Card (Numeric n) s) (fullSuit (n + 1) s)
+		fullSuit n  s 	= Add (Card (Numeric n) s) (fullSuit (n + 1) s)
 
 -- A function that draw one card from a hand and putting it on top of 
 -- the other hand
@@ -103,8 +103,8 @@ shuffle g h = shuffleHelper (size h - 1) g h Empty
 		shuffleHelper size g h1 h2 	= shuffleHelper (size - 1) g1 
 									  oldHand (Add choosenCard h2)
 			where
-				(rand, g1) = randomR (0, size) g
-				(choosenCard, oldHand) = drawCardFromDeck h1 rand
+				(rand, g1) 				= randomR (0, size) g
+				(choosenCard, oldHand)	= drawCardFromDeck h1 rand
 
 -- A function that given a deck draws cards given the rules of the bank in 
 -- the assignment
