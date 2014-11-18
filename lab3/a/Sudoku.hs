@@ -41,7 +41,9 @@ readSudoku f =
 
 -- cell generates an arbitrary cell in a Sudoku
 cell :: Gen (Maybe Int)
-cell = undefined
+cell =	frequency [(9, return Nothing), (1, 
+			do	n <- choose (1, 9)
+				return (Just n))]
 
 -- an instance for generating Arbitrary Sudokus
 instance Arbitrary Sudoku where
