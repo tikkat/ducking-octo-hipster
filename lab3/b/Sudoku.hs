@@ -77,7 +77,7 @@ cell =
 -- an instance for generating Arbitrary Sudokus
 instance Arbitrary Sudoku where
   arbitrary =
-    do rows <- sequence [ sequence [ cell | j <- [1..9] ] | i <- [1..9] ]
+    do rows <- sequence [sequence [cell | j <- [1..9]] | i <- [1..9]]
        return (Sudoku rows)
 
 prop_Sudoku :: Sudoku -> Bool
@@ -87,21 +87,73 @@ type Block = [Maybe Int]
 
 isOkayBlock :: Block -> Bool
 isOkayBlock b = length b == 9 && length onlyDigits == length (nub onlyDigits)
-	where onlyDigits = [cell | cell <- b, isJust cell]
+	where onlyDigits = filter isJust b
 
 blocks :: Sudoku -> [Block]
 blocks s = rs ++ transpose rs ++ threeByThreeBlocks
 	where
 		rs = rows s
-		threeByThreeBlocks = [take 9 $ drop n inRightOrder | n <- [0,9..72]]
-			where inRightOrder = concat [take 3 $ drop n k | n <- [0, 3, 6], k <- rs]
+		threeByThreeBlocks = [take 9 $ drop n inRightOrder | n <- [0, 9..72]]
+			where inRightOrder = concat [take 3 $ drop n row | n <- [0, 3, 6], row <- rs]
 
-blocks_prop :: Sudoku -> Bool
-blocks_prop s = length bs == 27 && and [length block == 9 | block <- bs]
+prop_blocks :: Sudoku -> Bool
+prop_blocks s = length bs == 27 && and [length block == 9 | block <- bs]
 	where bs = blocks s
 
 isOkay :: Sudoku -> Bool
 isOkay s = and [length (onlyDigits block) == length (nub (onlyDigits block)) | block <- blocks s]
 	where
 		onlyDigits :: Block -> Block
-		onlyDigits b = [cell | cell <- b, isJust cell]
+		onlyDigits = filter isJust
+
+type Pos = (Int, Int)
+
+blanks :: Sudoku -> [Pos]
+blanks s = [(row, column) | row <- [0..8], column <- [0..8], isNothing ((rows s !! row) !! column)]
+	-- ############ TODO: Check if `zip` may make it better, see lab assignment
+
+prop_blanks :: Sudoku -> Bool
+prop_blanks s = and [isNothing ((rows s !! fst pos) !! snd pos) | pos <- blanks s]
+
+(!!=) :: [a] -> (Int, a) -> [a]
+[] !!= _ = error "Program error: Empty list."
+(x:xs) !!= (n, value)	| n > length xs = error "Program error: Too large n."
+						| n < 0 = error "Program error: Negative n."
+						| otherwise = take n (x:xs) ++ value:drop (n + 1) (x:xs)
+
+-- Check that the value at the position are what is expected
+-- Check that the two lists with the elements at that position removed are the same
+-- Only test booleans, it is enough and correct
+prop_changeCell :: NonEmptyList Bool -> (NonNegative Int, Bool) -> Property
+prop_changeCell (NonEmpty xs) (NonNegative n, value) = 
+	n < length xs ==> xs' !! n == value && withoutN xs n == withoutN xs' n
+	where
+		xs' = xs !!= (n, value)
+
+		withoutN :: [a] -> Int -> [a]
+		withoutN xs n = take n xs ++ drop (n + 1) xs
+
+update :: Sudoku -> Pos -> Maybe Int -> Sudoku
+update s pos val = Sudoku $ take (fst pos) (rows s) ++ 
+							((rows s !! fst pos) !!= (snd pos, val)):drop (fst pos + 1) (rows s)
+
+prop_update :: Sudoku -> Pos -> Maybe Int -> Bool 					-- TODO
+prop_update s pos val = undefined
+
+candidates :: Sudoku -> Pos -> [Int]								-- TODO
+candidates s pos = undefined
+
+prop_candidates :: Sudoku -> Pos -> Bool 							-- TODO
+prop_candidates s pos = undefined
+
+solve :: Sudoku -> Maybe Sudoku 									-- TODO
+solve s = undefined
+
+readAndSolve :: FilePath -> IO ()									-- TODO
+readAndSolve f = undefined
+
+isSolutionOf :: Sudoku -> Sudoku -> Bool 							-- TODO
+isSolutionOf s1 s2 = undefined
+
+prop_SolveSound :: Sudoku -> Property								-- TODO
+prop_SolveSound s = undefined
