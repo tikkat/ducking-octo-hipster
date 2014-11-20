@@ -86,12 +86,22 @@ prop_Sudoku = isSudoku
 type Block = [Maybe Int]
 
 isOkayBlock :: Block -> Bool
-isOkayBlock b = length b == 9 && length a == length (nub a)
-	where a = [k | k <- b, isJust k]
+isOkayBlock b = length b == 9 && length onlyDigits == length (nub onlyDigits)
+	where onlyDigits = [cell | cell <- b, isJust cell]
 
 blocks :: Sudoku -> [Block]
-blocks s = undefined; --(rows s):(rows (transpose s))
+blocks s = rs ++ transpose rs ++ threeByThreeBlocks
+	where
+		rs = rows s
+		threeByThreeBlocks = [take 9 $ drop n inRightOrder | n <- [0,9..72]]
+			where inRightOrder = concat [take 3 $ drop n k | n <- [0, 3, 6], k <- rs]
 
-{-threeByThreeBlocks :: [[Maybe Int]] -> [Block]
-threeByThreeBlocks rs = [take 9 $ drop n ungroupped | n <- [0,9..72]]
-  where ungroupped = concat [take 3 $ drop n (rs !! i) | n <- [0,3,6], i <- [0..8]]-}
+blocks_prop :: Sudoku -> Bool
+blocks_prop s = length bs == 27 && and [length block == 9 | block <- bs]
+	where bs = blocks s
+
+isOkay :: Sudoku -> Bool
+isOkay s = and [length (onlyDigits block) == length (nub (onlyDigits block)) | block <- blocks s]
+	where
+		onlyDigits :: Block -> Block
+		onlyDigits b = [cell | cell <- b, isJust cell]
