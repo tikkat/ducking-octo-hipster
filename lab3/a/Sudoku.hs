@@ -52,7 +52,7 @@ cell =
 -- an instance for generating Arbitrary Sudokus
 instance Arbitrary Sudoku where
   arbitrary =
-    do rows <- sequence [ sequence [ cell | j <- [1..9] ] | i <- [1..9] ]
+    do rows <- sequence [sequence [cell | j <- [1..9]] | i <- [1..9]]
        return (Sudoku rows)
 
 prop_Sudoku :: Sudoku -> Bool
