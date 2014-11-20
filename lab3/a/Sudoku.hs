@@ -11,7 +11,8 @@ data Sudoku = Sudoku { rows :: [[Maybe Int]] }
 allBlankSudoku :: Sudoku
 allBlankSudoku = Sudoku $ replicate 9 $ replicate 9 Nothing
 
--- isSudoku sud checks if sud is really a valid representation of a sudoku puzzle
+-- isSudoku sud checks if sud is really a valid representation of a sudoku puzzle,
+-- i.e. 9 x 9 digits in the range 1 - 9 (or nothing)
 isSudoku :: Sudoku -> Bool
 isSudoku s = length (rows s) == 9 && and [length row == 9 && and [isNothing column || 
 			 (fromJust column > 0 && fromJust column < 10) | column <- row] | row <- rows s]
@@ -30,19 +31,16 @@ printSudoku s = putStrLn $ unlines [[if isNothing column then '.' else
 readSudoku :: FilePath -> IO Sudoku
 readSudoku f =
 	do
-		s <- getLines f
+		content <- readFile f
+		let s = Sudoku [[if a == '.' then Nothing else 
+				Just (ord a - 48) | a <- k] | k <- lines content]
+
 		if isSudoku s
 			then
 				return s
 			else do
 				putStrLn "Program error: Not a valid Sudoku!"
 				return allBlankSudoku
-	where
-		getLines :: FilePath -> IO Sudoku
-		getLines f = do
-			content <- readFile f
-			return	(Sudoku [[if a == '.' then Nothing else 
-					Just (ord a - 48) | a <- k] | k <- lines content])
 
 -- cell generates an arbitrary cell in a Sudoku
 cell :: Gen (Maybe Int)
