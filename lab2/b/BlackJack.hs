@@ -85,7 +85,7 @@ fullDeck = fullSuit 2 Hearts <+ fullSuit 2 Spades <+
 -- A function that draw one card from a hand and putting it on top of 
 -- the other hand
 draw :: Hand -> Hand -> (Hand, Hand)
-draw Empty _ 		= error "draw: The deck is empty."
+draw Empty _ 		= error "Program error: The deck is empty."
 draw (Add c h1) h2 	= (h1, Add c h2)
 
 -- A function that given a hand and a number n returns a tuple with the hand 
@@ -134,8 +134,8 @@ prop_fullDeck_size = size fullDeck == 52
 
 -- Test to see if the size of the two hands added together is the same as the 
 -- size of the two new hands added together 
-prop_draw_size :: Hand -> Hand -> Bool
-prop_draw_size h1 h2 = size (h1 <+ h2) == size (uncurry (<+) (draw h1 h2))
+prop_draw_size :: Hand -> Hand -> Property
+prop_draw_size h1 h2 = h1 /= Empty ==> size (h1 <+ h2) == size (uncurry (<+) (draw h1 h2))
 
 -- Test to see if a card that exist (or not exist) in a deck also exist in the 
 -- same but suffled deck
