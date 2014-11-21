@@ -16,10 +16,10 @@ empty :: Hand
 empty = Empty
 
 {-
-The valueRank function checks the value of a specific rank that you give it.
-We have added a guard for the numeric values that only accepts values between 2
-and 10. We do however believe that it would be better to have this check when 
-you create a Card.
+	The valueRank function checks the value of a specific rank that you give it.
+	We have added a guard for the numeric values that only accepts values between 2
+	and 10. We do however believe that it would be better to have this check when 
+	you create a Card.
 -}
 valueRank :: Rank -> Integer
 valueRank (Numeric n) | 1 < n && n <= 10	= n
