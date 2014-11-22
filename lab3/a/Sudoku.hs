@@ -27,7 +27,7 @@ isSolved s = and [and [isJust column | column <- row] | row <- rows s]
 -- printSudoku sud prints a representation of the sudoku sud on the screen
 printSudoku :: Sudoku -> IO ()
 printSudoku s = putStrLn $ unlines [[if isNothing column then '.' else 
-        chr (48 + fromJust column) | column <- row] | row <- rows s]
+        chr $ 48 + fromJust column | column <- row] | row <- rows s]
 
 -- readSudoku file reads from the file, and either delivers it, 
 -- or stops if the file did not contain a sudoku
@@ -47,7 +47,7 @@ cell :: Gen (Maybe Int)
 cell =
   do
     n <- choose (1, 9)
-    frequency [(9, return Nothing), (1, return (Just n))]
+    frequency [(9, return Nothing), (1, return $ Just n)]
 
 -- an instance for generating Arbitrary Sudokus
 instance Arbitrary Sudoku where
@@ -60,3 +60,24 @@ prop_Sudoku :: Sudoku -> Bool
 prop_Sudoku = isSudoku
 
 type Block = [Maybe Int]
+
+isOkayBlock :: Block -> Bool
+isOkayBlock b = length b == 9 && length onlyDigits == length (nub onlyDigits)
+  where onlyDigits = filter isJust b
+
+blocks :: Sudoku -> [Block]
+blocks s = rs ++ transpose rs ++ threeByThreeBlocks
+  where
+    rs                    = rows s
+    threeByThreeBlocks    = [take 9 $ drop n inRightOrder | n <- [0, 9..72]]
+      where inRightOrder  = concat [take 3 $ drop n row | n <- [0, 3, 6], 
+                            row <- transpose rs]
+
+prop_blocks :: Sudoku -> Bool
+prop_blocks s = length bs == 27 && and [length block == 9 | block <- bs]
+  where bs = blocks s
+
+isOkay :: Sudoku -> Bool
+isOkay s = and [isOkayBlock block | block <- blocks s]
+
+type Pos = (Int, Int)

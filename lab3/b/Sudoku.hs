@@ -27,7 +27,7 @@ isSolved s = and [and [isJust column | column <- row] | row <- rows s]
 -- printSudoku sud prints a representation of the sudoku sud on the screen
 printSudoku :: Sudoku -> IO ()
 printSudoku s = putStrLn $ unlines [[if isNothing column then '.' else 
-        chr (48 + fromJust column) | column <- row] | row <- rows s]
+        chr $ 48 + fromJust column | column <- row] | row <- rows s]
 
 -- readSudoku file reads from the file, and either delivers it, 
 -- or stops if the file did not contain a sudoku
@@ -47,7 +47,7 @@ cell :: Gen (Maybe Int)
 cell =
   do
     n <- choose (1, 9)
-    frequency [(9, return Nothing), (1, return (Just n))]
+    frequency [(9, return Nothing), (1, return $ Just n)]
 
 -- an instance for generating Arbitrary Sudokus
 instance Arbitrary Sudoku where
@@ -84,10 +84,10 @@ type Pos = (Int, Int)
 
 blanks :: Sudoku -> [Pos]
 blanks s = [(row, column) | row <- [0..8], column <- [0..8], 
-           isNothing ((rows s !! row) !! column)]
+           isNothing $ (rows s !! row) !! column]
 
 prop_blanks :: Sudoku -> Bool
-prop_blanks s = and [isNothing ((rows s !! fst pos) !! snd pos) | pos <- blanks s]
+prop_blanks s = and [isNothing $ (rows s !! fst pos) !! snd pos | pos <- blanks s]
 
 (!!=) :: [a] -> (Int, a) -> [a]
 []  !!= _           = error "Program error: Empty list."
@@ -126,7 +126,7 @@ candidates s (r, c) = [digit | digit <- [1..9],
                       length bs' == length (delete (Just digit) bs')]
   where
     bs        = blocks s
-    numBlock  = floor (toRational c /3) + floor (toRational r /3) * 3
+    numBlock  = floor (toRational c / 3) + floor (toRational r / 3) * 3
     bs'       = bs !! r ++ bs !! (9 + c) ++ bs !! (18 + numBlock)
 
 
@@ -137,7 +137,7 @@ prop_candidates s (r, c) =
   where newS cand = update s (r, c) (Just cand)
 
 solve :: Sudoku -> Maybe Sudoku
-solve s | not (isSudoku s && isOkay s)  = Nothing
+solve s | not $ isSudoku s && isOkay s  = Nothing
         | otherwise                     = solve' s
   where
     solve' :: Sudoku -> Maybe Sudoku
@@ -151,7 +151,7 @@ solve s | not (isSudoku s && isOkay s)  = Nothing
         solve'' _ [] _          = Nothing
         solve'' s (x:xs) blank  | isJust possibleSolution = possibleSolution
                                 | otherwise               = solve'' s xs blank
-          where possibleSolution = solve' (update s blank (Just x))
+          where possibleSolution = solve' $ update s blank (Just x)
 
 
 readAndSolve :: FilePath -> IO ()
@@ -170,7 +170,7 @@ isSolutionOf s1 s2 = isSolved s1 && isOkay s1 &&
   where
     rs1 = concat (rows s1) `zip` [1..81]
     rs2 = concat (rows s2) `zip` [1..81]
-    s2NumSolved = length (filter isJust (concat (rows s2)))
+    s2NumSolved = length $ filter isJust $ concat $ rows s2
 
 prop_solveSound :: Sudoku -> Property
 prop_solveSound s = isJust solution ==> fromJust solution `isSolutionOf` s
