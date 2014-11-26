@@ -63,12 +63,21 @@ type Block = [Maybe Int]
 
 isOkayBlock :: Block -> Bool
 isOkayBlock b = length b == 9 && length filtered == length (nub filtered)
-                where filtered = filter isJust b
+  where filtered = filter isJust b
 
 blocks :: Sudoku -> [Block]
-blocks s = rows ++ transpose rows ++ threeBythree
-          where rows    = rows s
-          threeBythree  = 
+blocks s = rws ++ transpose rws ++ threeByThree
+  where rws           = rows s
+        threeByThree  = [take 9 $ drop n allElem | n <- [0, 9..72]]
+        allElem       = concat [take 3 $ drop n row | n <- [0,3,6], row <- transpose rws]
+
+prop_blocks :: Sudoku -> Bool
+prop_blocks s = length (blocks s) == 27 && and[length block == 9 | block <- blocks s ]
+
+isOkay :: Sudoku -> Bool
+isOkay s = and[isOkayBlock block | block <- blocks s]
+
+type Pos = (Int,Int)
 -------------------------------------------------------------------------
 example :: Sudoku
 example =
