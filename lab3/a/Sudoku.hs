@@ -72,8 +72,8 @@ blocks s = rws ++ transpose rws ++ threeByThree
         allElem       = concat [take 3 $ drop n row | n <- [0,3,6], row <- transpose rws]
 
 prop_blocks :: Sudoku -> Bool
-prop_blocks s = length (blocks s) == 27 && and[length block == 9 | block <- blocks s ]
-
+prop_blocks s = length bs == 27 && and[length block == 9 | block <- bs ]
+  where  bs = blocks s
 isOkay :: Sudoku -> Bool
 isOkay s = and[isOkayBlock block | block <- blocks s]
 
