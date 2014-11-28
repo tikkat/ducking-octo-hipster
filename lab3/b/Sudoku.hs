@@ -85,7 +85,14 @@ type Pos = (Int,Int)
 
 -------------------------------------------------------------------------
 
+-- Prints all the cells in the Sudoku that doesn't have a number on it
 blanks :: Sudoku -> [Pos]
+blanks s = [(row, cell) | row <- [0..8], cell <- [0..8], isNothing $ (rows s !! row) !! cell ]
+
+prop_blanks :: Sudoku -> Bool
+prop_blanks s = all isNothing (blanks s)
+
+-- (!!=) :: [a] -> (Int,a) -> [a]
 
 -------------------------------------------------------------------------
 example :: Sudoku
