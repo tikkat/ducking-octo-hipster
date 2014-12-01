@@ -95,7 +95,7 @@ blanks s = [(row, column) | row <- [0..8], column <- [0..8],
            isNothing $ (rows s !! row) !! column]
 
 prop_blanks :: Sudoku -> Bool
-prop_blanks s = and [isNothing $ (rows s !! fst pos) !! snd pos | pos <- blanks s]
+prop_blanks s = and [isNothing $ (rows s !! r) !! c | (r, c) <- blanks s]
 
 (!!=) :: [a] -> (Int, a) -> [a]
 []  !!= _           = error "Program error: Empty list."
@@ -118,8 +118,7 @@ prop_changeCell (NonEmpty xs) (NonNegative n, value) =
     withoutN xs n = take n xs ++ drop (n + 1) xs
 
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
-update s (r, c) val = Sudoku $ take r rs ++ 
-  ((rs !! r) !!= (c, val)):drop (r + 1) rs
+update s (r, c) v = Sudoku $ take r rs ++ ((rs !! r) !!= (c, v)):drop (r + 1) rs
   where rs = rows s
 
 prop_update :: Sudoku -> Pos -> Maybe Int -> Property
@@ -133,8 +132,8 @@ candidates :: Sudoku -> Pos -> [Int]
 candidates s (r, c) = [digit | digit <- [1..9], 
                       length bs' == length (delete (Just digit) bs')]
   where
-    bs        = blocks s
     numBlock  = floor (toRational c / 3) + floor (toRational r / 3) * 3
+    bs        = blocks s
     bs'       = bs !! r ++ bs !! (9 + c) ++ bs !! (18 + numBlock)
 
 
