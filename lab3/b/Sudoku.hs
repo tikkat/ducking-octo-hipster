@@ -73,8 +73,7 @@ blocks :: Sudoku -> [Block]
 blocks s = rs ++ transpose rs ++ threeByThreeBlocks
   where
     rs                  = rows s
-    inRightOrder        = concat [take 3 $ drop n row | n <- [0, 3, 6], 
-                          row <- transpose rs]
+    inRightOrder        = concat [take 3 $ drop n row | n <- [0, 3, 6], row <- rs]
     threeByThreeBlocks  = [take 9 $ drop n inRightOrder | n <- [0, 9..72]]
 
 -- A property checking if the returned list of blocks of a given Sudoku is okay, 
@@ -129,17 +128,16 @@ prop_update s (r, c) val = r > -1 && r < 9 && c > -1 && c < 9 ==>
 -- Get current row, coulumn and block in the same list, 
 -- add number to candidates if not in the list
 candidates :: Sudoku -> Pos -> [Int]
-candidates s (r, c) = [digit | digit <- [1..9], 
-                      length bs' == length (delete (Just digit) bs')]
+candidates s (r, c) = [digit | digit <- [1..9], notElem (Just digit) bs']
   where
-    numBlock  = floor (toRational c / 3) + floor (toRational r / 3) * 3
+    numBlock  = floor (toRational c / 3) * 3 + floor (toRational r / 3)
     bs        = blocks s
     bs'       = bs !! r ++ bs !! (9 + c) ++ bs !! (18 + numBlock)
 
 
 prop_candidates :: Sudoku -> Pos -> Property
 prop_candidates s (r, c) = 
-  isSudoku s && isOkay s && r > -1 && r < 9 && c > -1 && c < 9 ==> 
+  r > -1 && r < 9 && c > -1 && c < 9 && isSudoku s && isOkay s ==> 
   and [isSudoku (newS cand) && isOkay (newS cand) | cand <- candidates s (r, c)]
   where newS cand = update s (r, c) (Just cand)
 
