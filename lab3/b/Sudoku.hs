@@ -128,8 +128,8 @@ prop_update :: Sudoku -> Pos -> Maybe Int -> Bool
 prop_update s (r, c) val = (updated !! r') !! c' == val
   where
     updated = rows $ update s (r', c') val
-    r' = mod (abs r) 8
-    c' = mod (abs c) 8
+    r' = mod (abs r) 9
+    c' = mod (abs c) 9
 
 -- Get current row, coulumn and block in the same list, 
 -- add number to candidates if not in the list
@@ -146,12 +146,12 @@ prop_candidates s (r, c) = isSudoku s && isOkay s ==>
   and [isSudoku (updated cand) && isOkay (updated cand) | cand <- candidates s (r', c')]
   where
     updated cand = update s (r', c') (Just cand)
-    r' = mod (abs r) 8
-    c' = mod (abs c) 8
+    r' = mod (abs r) 9
+    c' = mod (abs c) 9
 
 solve :: Sudoku -> Maybe Sudoku
 solve s | not $ isSudoku s && isOkay s  = Nothing
-            | otherwise                     = solve' s (blanks s)
+        | otherwise                     = solve' s (blanks s)
   where
     solve' :: Sudoku -> [Pos] -> Maybe Sudoku
     solve' s []     = Just s
