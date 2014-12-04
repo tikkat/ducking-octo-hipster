@@ -89,6 +89,7 @@ isOkay s = and [isOkayBlock block | block <- blocks s]
 
 type Pos = (Int, Int)
 
+-- A function returning the positions of all blank in the given Sudoku
 blanks :: Sudoku -> [Pos]
 blanks s = [(row, column) | row <- [0..8], column <- [0..8], 
            isNothing $ (rows s !! row) !! column]
@@ -96,6 +97,8 @@ blanks s = [(row, column) | row <- [0..8], column <- [0..8],
 prop_blanks :: Sudoku -> Bool
 prop_blanks s = and [isNothing $ (rows s !! r) !! c | (r, c) <- blanks s]
 
+-- Given a list and an index and a position the function returns a 
+-- modified list with the given value at the given position
 (!!=) :: [a] -> (Int, a) -> [a]
 []  !!= _           = error "Program error: Empty list."
 xs  !!= (n, value)  | n + 1 > length xs = error "Program error: Too large n."
@@ -116,19 +119,22 @@ prop_changeCell (NonEmpty xs) (NonNegative n, value) =
     withoutN :: [a] -> Int -> [a]
     withoutN xs n = take n xs ++ drop (n + 1) xs
 
+-- A function for updating a position in a Sudoku
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
 update s (r, c) v = Sudoku $ take r rs ++ ((rs !! r) !!= (c, v)):drop (r + 1) rs
   where rs = rows s
 
-prop_update :: Sudoku -> Pos -> Maybe Int -> Property
-prop_update s (r, c) val = r > -1 && r < 9 && c > -1 && c < 9 ==> 
-  (rows s' !! r) !! c == val
-  where s' = update s (r, c) val
+prop_update :: Sudoku -> Pos -> Maybe Int -> Bool
+prop_update s (r, c) val = (updated !! r') !! c' == val
+  where
+    updated = rows $ update s (r', c') val
+    r' = mod (abs r) 8
+    c' = mod (abs c) 8
 
 -- Get current row, coulumn and block in the same list, 
 -- add number to candidates if not in the list
 candidates :: Sudoku -> Pos -> [Int]
-candidates s (r, c) = [digit | digit <- [1..9], notElem (Just digit) bs']
+candidates s (r, c) = [digit | digit <- [1..9], Just digit `notElem` bs']
   where
     numBlock  = floor (toRational c / 3) * 3 + floor (toRational r / 3)
     bs        = blocks s
@@ -136,29 +142,23 @@ candidates s (r, c) = [digit | digit <- [1..9], notElem (Just digit) bs']
 
 
 prop_candidates :: Sudoku -> Pos -> Property
-prop_candidates s (r, c) = 
-  r > -1 && r < 9 && c > -1 && c < 9 && isSudoku s && isOkay s ==> 
-  and [isSudoku (newS cand) && isOkay (newS cand) | cand <- candidates s (r, c)]
-  where newS cand = update s (r, c) (Just cand)
+prop_candidates s (r, c) = isSudoku s && isOkay s ==> 
+  and [isSudoku (updated cand) && isOkay (updated cand) | cand <- candidates s (r', c')]
+  where
+    updated cand = update s (r', c') (Just cand)
+    r' = mod (abs r) 8
+    c' = mod (abs c) 8
 
 solve :: Sudoku -> Maybe Sudoku
 solve s | not $ isSudoku s && isOkay s  = Nothing
-        | otherwise                     = solve' s
+            | otherwise                     = solve' s (blanks s)
   where
-    solve' :: Sudoku -> Maybe Sudoku
-    solve' s  | null allBlanks  = Just s
-              | otherwise       = solve'' s (candidates s blank) blank
-      where
-        allBlanks = blanks s
-        blank     = head allBlanks
+    solve' :: Sudoku -> [Pos] -> Maybe Sudoku
+    solve' s []     = Just s
+    solve' s (b:bs) = if null solutions then Nothing else head solutions
+      where solutions = filter isJust [solve' s' bs | s' <- [update s b (Just cand) | cand <- candidates s b]]
 
-        solve'' :: Sudoku -> [Int] -> Pos -> Maybe Sudoku
-        solve'' _ [] _          = Nothing
-        solve'' s (x:xs) blank  | isJust possibleSolution = possibleSolution
-                                | otherwise               = solve'' s xs blank
-          where possibleSolution = solve' $ update s blank (Just x)
-
-
+-- A function solving the Sudoku represented in the given file
 readAndSolve :: FilePath -> IO ()
 readAndSolve f =
   do
@@ -180,5 +180,3 @@ isSolutionOf s1 s2 = isSolved s1 && isOkay s1 &&
 prop_solveSound :: Sudoku -> Property
 prop_solveSound s = isJust solution ==> fromJust solution `isSolutionOf` s
   where solution = solve s
-
-fewerChecks prop = quickCheckWith stdArgs {maxSuccess = 30} prop
