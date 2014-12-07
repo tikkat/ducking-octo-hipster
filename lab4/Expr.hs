@@ -2,7 +2,8 @@ module Expr where
 
 import Parsing
 import Data.Char
-import Test.QuickCheck
+
+--import ExprQC
 
 data Expr
   = Num Double
@@ -55,7 +56,7 @@ num = pmap Num $ nat >*> \ds -> decimals >*> \decs -> success $ read $ ds ++ '.'
   where
     nat = pos +++ (char '-' >-> neg)
     pos = oneOrMore digit
-    neg = oneOrMore digit >*> \ds -> success $ "-" ++ ds
+    neg = oneOrMore digit >*> \ds -> success $ '-':ds
     decimals  = decimals' +++ success "0"
     decimals' = char '.' >-> oneOrMore digit
 
@@ -74,34 +75,6 @@ readExpr s =  let s' = filter (not.isSpace) s
 
 -- PARSER
 
-prop_showReadExpr :: Expr -> Bool
-prop_showReadExpr e = let s = showExpr e 
-                          Just e' = readExpr s
-                      in showExpr e' == s
-
-arbExpr :: Int -> Gen Expr
-arbExpr s = frequency [(2, rNum), (2, return X), (1, rFunc), (s, rOp)]
-  where
-    s' = s `div` 2
-
-    rNum = do 
-      n <- arbitrary
-      return $ Num n
-
-    rOp = do 
-      op <- elements [Add, Mul]
-      e1 <- arbExpr s'
-      e2 <- arbExpr s'
-      return $ op e1 e2
-
-    rFunc = do 
-      func <- elements [Sin, Cos]
-      e <- arbExpr s'
-      return $ func e
-
-instance Arbitrary Expr where
-  arbitrary = sized arbExpr
-
 simplify :: Expr -> Expr
 simplify (Add e e') = add (simplify e) (simplify e')
 simplify (Mul e e') = mul (simplify e) (simplify e')
@@ -119,11 +92,6 @@ mul (Num 1) e       = e
 mul e       (Num 1) = e
 mul e1      e2      = Mul e1 e2
 
-prop_simplify :: Expr -> Bool
-prop_simplify e = let e' = simplify e
-                      e'' = simplify e'
-                  in eval e 1 == eval e' 1 && e' == e''
-
 differentiate :: Expr -> Expr
 differentiate e = simplify $ differentiate' e
   where
@@ -132,3 +100,16 @@ differentiate e = simplify $ differentiate' e
     differentiate' (Mul e1 e2)  = add (mul (differentiate' e1) e2) (mul e1 (differentiate' e2))
     differentiate' X            = Num 1
     differentiate' _            = Num 0
+
+type Point = (Double, Double)
+
+points :: Expr -> Double -> (Int, Int) -> [Point]
+points exp scale (width, height) = zip [0..width'] (map ((\y -> (-y / scale) + height' * 0.5).eval exp) xpoints)
+  where
+    width'  = fromIntegral width
+    height' = fromIntegral height
+    xpoints = [(px - width' * 0.5) * scale | px <- [0..width']]
+
+-- y = eval x
+-- x = (px - width * 0.5) * scale
+-- py = (-y / scale) + height * 0.5
