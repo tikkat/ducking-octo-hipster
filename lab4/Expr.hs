@@ -83,6 +83,7 @@ simplify e          = e
 add (Num n) (Num m) = Num (n + m)
 add (Num 0) e       = e
 add e       (Num 0) = e
+-- add X       X       = Mul (Num 2) X                        #### WANTED?
 add e1      e2      = Add e1 e2
 
 mul (Num n) (Num m) = Num (n * m)
@@ -98,18 +99,17 @@ differentiate e = simplify $ differentiate' e
     differentiate' :: Expr -> Expr
     differentiate' (Add e1 e2)  = add (differentiate' e1) (differentiate' e2)
     differentiate' (Mul e1 e2)  = add (mul (differentiate' e1) e2) (mul e1 (differentiate' e2))
+    differentiate' (Sin e)      = Mul (differentiate' e) (Cos e)
+    differentiate' (Cos e)      = Mul (Num (-1)) (Sin e)
     differentiate' X            = Num 1
     differentiate' _            = Num 0
 
 type Point = (Double, Double)
 
 points :: Expr -> Double -> (Int, Int) -> [Point]
-points exp scale (width, height) = zip [0..width'] (map ((\y -> (-y / scale) + height' * 0.5).eval exp) xpoints)
-  where
-    width'  = fromIntegral width
-    height' = fromIntegral height
-    xpoints = [(px - width' * 0.5) * scale | px <- [0..width']]
+points exp scale (width, height) = [(px, (-(eval exp ((px - fromIntegral width * 0.5) * scale)) / scale) + fromIntegral height * 0.5) | px <- [0..fromIntegral width]]
 
--- y = eval x
--- x = (px - width * 0.5) * scale
--- py = (-y / scale) + height * 0.5
+{-FROM FORMULA:
+y = eval exp x
+x = (px - width * 0.5) * scale
+py = (-y / scale) + height * 0.5-}
