@@ -51,7 +51,7 @@ sin' = pmap Sin $ char 's' >-> char 'i' >-> char 'n' >-> factor
 cos' :: Parser Expr
 cos' = pmap Cos $ char 'c' >-> char 'o' >-> char 's' >-> factor
 
-num :: Parser Expr
+num :: Parser Expr                                      -- Possible to use: reads "The string" :: [(Double, String)], here? 
 num = pmap Num $ nat >*> \ds -> decimals >*> \decs -> success $ read $ ds ++ '.':decs
   where
     nat = pos +++ (char '-' >-> neg)

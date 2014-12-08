@@ -32,9 +32,11 @@ readAndDifferentiate expInput scaleInput can = do
     readAndDraw expInput scaleInput can
 
 main = do
-  setStyle documentBody "padding" "50px"
+  setStyle documentBody "padding" "40px"
   setStyle documentBody "background-color" "#efefef"
   setStyle documentBody "text-align" "center"
+
+  header <- newHeader "Function plotter"
 
   canvas <- newCanvas canWidth canHeight
 
@@ -47,7 +49,7 @@ main = do
   buttonDiv <- newElem "div"
   setChildren buttonDiv [diffButton, drawButton]
 
-  setChildren documentBody [canvas, expElem, scaleElem, buttonDiv]
+  setChildren documentBody [header, canvas, expElem, scaleElem, buttonDiv]
 
   focus expInput
   select expInput
@@ -109,7 +111,7 @@ newButton value = do
   button <- newElem "div"
   setProp button "innerText" value
   setStyle button "display" "inline-block"
-  setStyle button "margin" "10px"
+  setStyle button "margin" "20px 5px"
   setStyle button "height" "25px"
   setStyle button "line-height" "25px"
   setStyle button "padding" "0px 10px"
@@ -118,6 +120,16 @@ newButton value = do
   setStyle button "font-family" "arial"
   setStyle button "color" "white"
   return button
+
+newHeader :: String -> IO Elem
+newHeader text = do
+  header <- newElem "div"
+  setProp header "innerText" text
+  setStyle header "margin-bottom" "30px"
+  setStyle header "font-family" "arial"
+  setStyle header "font-size" "50px"
+  setStyle header "color" "#666"
+  return header
 
 select :: Elem -> IO ()
 select = ffi $ toJSStr "(function(e) {e.select();})"
