@@ -14,6 +14,8 @@ data Expr
   | X
   deriving Eq
 
+-- Can we add abs, pow and/or ^, sqrt
+
 showExpr :: Expr -> String
 showExpr X          = "x"
 showExpr (Num n)    = show n
@@ -83,7 +85,7 @@ simplify e          = e
 add (Num n) (Num m) = Num (n + m)
 add (Num 0) e       = e
 add e       (Num 0) = e
--- add X       X       = Mul (Num 2) X                        #### WANTED?
+-- add X       X       = Mul (Num 2) X                        -- #### WANTED?
 add e1      e2      = Add e1 e2
 
 mul (Num n) (Num m) = Num (n * m)
@@ -107,7 +109,9 @@ differentiate e = simplify $ differentiate' e
 type Point = (Double, Double)
 
 points :: Expr -> Double -> (Int, Int) -> [Point]
-points exp scale (width, height) = [(px, (-(eval exp ((px - fromIntegral width * 0.5) * scale)) / scale) + fromIntegral height * 0.5) | px <- [0..fromIntegral width]]
+points e s (w, h) = [(px, (-(eval e ((px - w' * 0.5) * s)) / s) + h' * 0.5) | px <- [0..w']]
+  where w'  = fromIntegral w
+        h'  = fromIntegral h
 
 {-FROM FORMULA:
 y = eval exp x
