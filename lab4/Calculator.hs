@@ -42,6 +42,7 @@ main = do
 
   (expElem, expInput) <- newInput "x" "f(x) ="
   (scaleElem, scaleInput) <- newInput "1" "Scale:"
+  (sliderElem, sliderInput) <- newSlider "1" "0.05" "5" "0.05"          -- ##### NEW
 
   drawButton <- newButton "Draw"
   diffButton <- newButton "Differentiate"
@@ -49,7 +50,7 @@ main = do
   buttonDiv <- newElem "div"
   setChildren buttonDiv [diffButton, drawButton]
 
-  setChildren documentBody [header, canvas, expElem, scaleElem, buttonDiv]
+  setChildren documentBody [header, canvas, expElem, scaleElem, buttonDiv, sliderElem]
 
   focus expInput
   select expInput
@@ -58,6 +59,7 @@ main = do
   onEvent drawButton  OnClick $ \_ _  -> readAndDraw expInput scaleInput can
   onEvent expInput    OnKeyUp $ \code -> when (code == 13) $ readAndDraw expInput scaleInput can
   onEvent diffButton  OnClick $ \_ _  -> readAndDifferentiate expInput scaleInput can
+  onEvent sliderInput  OnChange $ readAndDraw expInput sliderInput can
 
 newCanvas :: Int -> Int -> IO Elem
 newCanvas width height = do
@@ -69,12 +71,41 @@ newCanvas width height = do
   setStyle canvas "background-color" "white"
   return canvas
 
+newSlider :: String -> String -> String -> String -> IO (Elem, Elem)
+newSlider value minValue maxValue stepValue = do
+  sliderElem <- newElem "input"
+  setProp sliderElem "type" "range"
+  setProp sliderElem "value" value
+  setProp sliderElem "min" minValue
+  setProp sliderElem "max" maxValue
+  setProp sliderElem "step" stepValue
+  setStyle sliderElem "width" "230px"
+  setStyle sliderElem "height" "25px"
+  setStyle sliderElem "line-height" "25px"
+  setStyle sliderElem "border" "0"
+  setStyle sliderElem "padding" "0"
+  setStyle sliderElem "margin" "0"
+  setStyle sliderElem "outline" "none"
+  setStyle sliderElem "font-family" "arial"
+  setStyle sliderElem "font-size" "14px"
+
+  div <- newElem "div"
+  setStyle div "display" "inline-block"
+  setStyle div "width" "280px"
+  setStyle div "height" "25px"
+  setStyle div "margin-top" "10px"
+  setStyle div "padding" "0px 10px"
+  setStyle div "background-color" "white"
+
+  setChildren div [sliderElem]
+  return (div, sliderElem)
+
 newInput :: String -> String -> IO (Elem, Elem)
 newInput value label = do
   inputElem <- newElem "input"
   setProp inputElem "type" "text"
   setProp inputElem "value" value
-  setStyle inputElem "width" "240px"
+  setStyle inputElem "width" "230px"
   setStyle inputElem "height" "25px"
   setStyle inputElem "line-height" "25px"
   setStyle inputElem "border" "0"
@@ -86,7 +117,7 @@ newInput value label = do
   labelElem <- newElem "span"
   setProp labelElem "innerHTML" label
   setStyle labelElem "display" "inline-block"
-  setStyle labelElem "width" "40px"
+  setStyle labelElem "width" "50px"
   setStyle labelElem "text-align" "left"
   setStyle labelElem "font-family" "arial"
   setStyle labelElem "font-size" "14px"
