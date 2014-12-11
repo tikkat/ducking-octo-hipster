@@ -2,6 +2,7 @@ module Expr where
 
 import Parsing
 import Data.Char
+import Data.Maybe
 
 --import ExprQC
 
@@ -9,8 +10,10 @@ data Expr
   = Num Double
   | Add Expr Expr
   | Mul Expr Expr
+  | Pow Expr Expr
   | Sin Expr
   | Cos Expr
+  | Abs Expr
   | X
   deriving Eq
 
@@ -21,8 +24,10 @@ showExpr X          = "x"
 showExpr (Num n)    = show n
 showExpr (Add e e') = showExpr e ++ " + " ++ showExpr e'
 showExpr (Mul e e') = showFactor e ++ " * " ++ showFactor e'
+showExpr (Pow e e') = "(" ++ showFunc e ++ "^" ++ showFunc e' ++ ")"
 showExpr (Sin e)    = "sin " ++ showFunc e
 showExpr (Cos e)    = "cos " ++ showFunc e
+showExpr (Abs e)    = "abs " ++ showFunc e
 
 showFactor (Add e e') = "(" ++ showExpr (Add e e') ++ ")"
 showFactor e          = showExpr e
@@ -35,23 +40,28 @@ instance Show Expr where
   show = showExpr
 
 eval :: Expr -> Double -> Double
-eval X          var = var
+eval X          x = x
 eval (Num n)    _   = n
-eval (Add e e') var = eval e var + eval e' var
-eval (Mul e e') var = eval e var * eval e' var
-eval (Sin e)    var = sin $ eval e var
-eval (Cos e)    var = cos $ eval e var
+eval (Add e e') x = eval e x + eval e' x
+eval (Mul e e') x = eval e x * eval e' x
+eval (Pow e e') x = eval e x ** eval e' x
+eval (Sin e)    x = sin $ eval e x
+eval (Cos e)    x = cos $ eval e x
+eval (Abs e)    x = abs $ eval e x
 
 -- PARSER
 
 other :: Parser Expr
-other = sin' +++ cos' +++ var +++ num
+other = sin' +++ cos' +++ abs' +++ var +++ num
 
 sin' :: Parser Expr
 sin' = pmap Sin $ char 's' >-> char 'i' >-> char 'n' >-> factor
 
 cos' :: Parser Expr
 cos' = pmap Cos $ char 'c' >-> char 'o' >-> char 's' >-> factor
+
+abs' :: Parser Expr
+abs' = pmap Abs $ char 'a' >-> char 'b' >-> char 's' >-> factor
 
 num :: Parser Expr                                      -- Possible to use: reads "The string" :: [(Double, String)], here? 
 num = pmap Num $ nat >*> \ds -> decimals >*> \decs -> success $ read $ ds ++ '.':decs
@@ -62,11 +72,15 @@ num = pmap Num $ nat >*> \ds -> decimals >*> \decs -> success $ read $ ds ++ '.'
     decimals  = decimals' +++ success "0"
     decimals' = char '.' >-> oneOrMore digit
 
+{- num :: Parser Expr
+num = pmap Num $ Just (fst (head (reads :: [(Double, String)])), fst (head (reads :: [(Double, String)]))) -}
+
 var :: Parser Expr
 var = char 'x' >-> success X
 
 expr    = foldr1 Add `pmap` chain term (char '+')
-term    = foldr1 Mul `pmap` chain factor (char '*')
+term    = foldr1 Pow `pmap` chain term' (char '^')
+term'    = foldr1 Mul `pmap` chain factor (char '*')
 factor  = char '(' >-> expr <-< char ')' +++ other
 
 readExpr :: String -> Maybe Expr
@@ -113,7 +127,7 @@ points e s (w, h) = [(px, (-(eval e ((px - w' * 0.5) * s)) / s) + h' * 0.5) | px
   where w'  = fromIntegral w
         h'  = fromIntegral h
 
-{-FROM FORMULA:
+{- FROM FORMULA:
 y = eval exp x
 x = (px - width * 0.5) * scale
-py = (-y / scale) + height * 0.5-}
+py = (-y / scale) + height * 0.5 -}
