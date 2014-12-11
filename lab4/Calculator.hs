@@ -9,7 +9,7 @@ import Data.Maybe
 
 import Expr
 
-canWidth  = 300
+canWidth  = 1000
 canHeight = 300
 
 scale = 0.04
@@ -40,9 +40,9 @@ main = do
 
   canvas <- newCanvas canWidth canHeight
 
-  (expElem, expInput) <- newInput "x" "f(x) ="
+  (expElem, expInput) <- newInput "sinx" "f(x) ="
   (scaleElem, scaleInput) <- newInput "1" "Scale:"
-  (sliderElem, sliderInput) <- newSlider "1" "0.05" "5" "0.05"          -- ##### NEW
+  (sliderElem, sliderInput) <- newSlider "1" "0.05" "5" "0.05"
 
   drawButton <- newButton "Draw"
   diffButton <- newButton "Differentiate"
@@ -50,16 +50,28 @@ main = do
   buttonDiv <- newElem "div"
   setChildren buttonDiv [diffButton, drawButton]
 
-  setChildren documentBody [header, canvas, expElem, scaleElem, buttonDiv, sliderElem]
+  setChildren documentBody [header, canvas, expElem, scaleElem, sliderElem, buttonDiv]
 
   focus expInput
   select expInput
 
   Just can <- getCanvas canvas
+
+  readAndDraw expInput scaleInput can
+
   onEvent drawButton  OnClick $ \_ _  -> readAndDraw expInput scaleInput can
   onEvent expInput    OnKeyUp $ \code -> when (code == 13) $ readAndDraw expInput scaleInput can
   onEvent diffButton  OnClick $ \_ _  -> readAndDifferentiate expInput scaleInput can
-  onEvent sliderInput  OnChange $ readAndDraw expInput sliderInput can
+
+  onEvent scaleInput  OnChange $ do
+    readAndDraw expInput scaleInput can
+    val <- getProp scaleInput "value"
+    setProp sliderInput "value" val
+
+  onEvent sliderInput OnChange $ do
+    readAndDraw expInput sliderInput can
+    val <- getProp sliderInput "value"
+    setProp scaleInput "value" val
 
 newCanvas :: Int -> Int -> IO Elem
 newCanvas width height = do
@@ -79,15 +91,9 @@ newSlider value minValue maxValue stepValue = do
   setProp sliderElem "min" minValue
   setProp sliderElem "max" maxValue
   setProp sliderElem "step" stepValue
-  setStyle sliderElem "width" "230px"
+  setStyle sliderElem "width" "100%"
   setStyle sliderElem "height" "25px"
-  setStyle sliderElem "line-height" "25px"
-  setStyle sliderElem "border" "0"
-  setStyle sliderElem "padding" "0"
   setStyle sliderElem "margin" "0"
-  setStyle sliderElem "outline" "none"
-  setStyle sliderElem "font-family" "arial"
-  setStyle sliderElem "font-size" "14px"
 
   div <- newElem "div"
   setStyle div "display" "inline-block"
