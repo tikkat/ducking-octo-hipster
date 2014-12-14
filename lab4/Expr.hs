@@ -7,17 +7,16 @@ import Data.Maybe
 --import ExprQC
 
 data Expr
-  = Num Double
-  | Add Expr Expr
-  | Mul Expr Expr
-  | Pow Expr Expr
-  | Sin Expr
-  | Cos Expr
-  | Abs Expr
+  = Num   Double
+  | Add   Expr Expr
+  | Mul   Expr Expr
+  | Pow   Expr Expr
+  | Sin   Expr
+  | Cos   Expr
+  | Abs   Expr
+  | Sqrt  Expr
   | X
   deriving Eq
-
--- Can we add abs, pow and/or ^, sqrt
 
 showExpr :: Expr -> String
 showExpr X          = "x"
@@ -25,9 +24,10 @@ showExpr (Num n)    = show n
 showExpr (Add e e') = showExpr e ++ " + " ++ showExpr e'
 showExpr (Mul e e') = showFactor e ++ " * " ++ showFactor e'
 showExpr (Pow e e') = "(" ++ showFunc e ++ "^" ++ showFunc e' ++ ")"
-showExpr (Sin e)    = "sin " ++ showFunc e
-showExpr (Cos e)    = "cos " ++ showFunc e
-showExpr (Abs e)    = "abs " ++ showFunc e
+showExpr (Sin e)    = "sin "  ++ showFunc e
+showExpr (Cos e)    = "cos "  ++ showFunc e
+showExpr (Abs e)    = "abs "  ++ showFunc e
+showExpr (Sqrt e)   = "sqrt " ++ showFunc e
 
 showFactor (Add e e') = "(" ++ showExpr (Add e e') ++ ")"
 showFactor e          = showExpr e
@@ -41,18 +41,19 @@ instance Show Expr where
 
 eval :: Expr -> Double -> Double
 eval X          x = x
-eval (Num n)    _   = n
+eval (Num n)    _ = n
 eval (Add e e') x = eval e x + eval e' x
 eval (Mul e e') x = eval e x * eval e' x
 eval (Pow e e') x = eval e x ** eval e' x
 eval (Sin e)    x = sin $ eval e x
 eval (Cos e)    x = cos $ eval e x
 eval (Abs e)    x = abs $ eval e x
+eval (Sqrt e)   x = sqrt $ eval e x
 
 -- PARSER
 
 other :: Parser Expr
-other = sin' +++ cos' +++ abs' +++ var +++ num
+other = sin' +++ cos' +++ abs' +++ sqrt' +++ var +++ num
 
 sin' :: Parser Expr
 sin' = pmap Sin $ char 's' >-> char 'i' >-> char 'n' >-> factor
@@ -63,20 +64,14 @@ cos' = pmap Cos $ char 'c' >-> char 'o' >-> char 's' >-> factor
 abs' :: Parser Expr
 abs' = pmap Abs $ char 'a' >-> char 'b' >-> char 's' >-> factor
 
-num :: Parser Expr                                      -- Possible to use: reads "The string" :: [(Double, String)], here? 
-num = pmap Num $ nat >*> \ds -> decimals >*> \decs -> success $ read $ ds ++ '.':decs
-  where
-    nat = pos +++ (char '-' >-> neg)
-    pos = oneOrMore digit
-    neg = oneOrMore digit >*> \ds -> success $ '-':ds
-    decimals  = decimals' +++ success "0"
-    decimals' = char '.' >-> oneOrMore digit
-
-{- num :: Parser Expr
-num = pmap Num $ Just (fst (head (reads :: [(Double, String)])), fst (head (reads :: [(Double, String)]))) -}
+sqrt' :: Parser Expr
+sqrt' = pmap Sqrt $ char 's' >-> char 'q' >-> char 'r' >-> char 't' >-> factor
 
 var :: Parser Expr
 var = char 'x' >-> success X
+
+num :: Parser Expr
+num = pmap Num $ oneOrMore (sat $ \d -> d `elem` ".-0123456789") >*> \ds -> success $ read ds
 
 expr    = foldr1 Add `pmap` chain term (char '+')
 term    = foldr1 Pow `pmap` chain term' (char '^')
@@ -99,7 +94,6 @@ simplify e          = e
 add (Num n) (Num m) = Num (n + m)
 add (Num 0) e       = e
 add e       (Num 0) = e
--- add X       X       = Mul (Num 2) X                        -- #### WANTED?
 add e1      e2      = Add e1 e2
 
 mul (Num n) (Num m) = Num (n * m)
@@ -117,6 +111,9 @@ differentiate e = simplify $ differentiate' e
     differentiate' (Mul e1 e2)  = add (mul (differentiate' e1) e2) (mul e1 (differentiate' e2))
     differentiate' (Sin e)      = Mul (differentiate' e) (Cos e)
     differentiate' (Cos e)      = Mul (Num (-1)) (Sin e)
+    differentiate' (Abs e)      = undefined                    -- ### HOW SHOULD WE DO HERE SENSE D/DX ABS X = X / ABS X ?
+    differentiate' (Sqrt e)     = undefined                    -- ### HOW SHOULD WE DO HERE SENSE D/DX SQRT X = 1 / 2 SQRT X ?
+    differentiate' (Pow e1 e2)  = undefined                    -- ### HOW SHOULD WE DO HERE? DELETE POW ALL TOGETHER?
     differentiate' X            = Num 1
     differentiate' _            = Num 0
 
