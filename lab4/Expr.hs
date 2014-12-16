@@ -105,7 +105,7 @@ differentiate e = simplify $ differentiate' e
 
 type Point = (Double, Double)
 
--- Given an expression, a scaling factor and the height an width for a plotting canvas, 
+-- Given an expression, a scaling factor and the height and width for a plotting canvas, 
 -- calculate the resulting set of points 
 points :: Expr -> Double -> (Int, Int) -> [Point]
 points e s (w, h) = [(px, (-(eval e ((px - w' * 0.5) * s)) / s) + h' * 0.5) | px <- [0..w']]
