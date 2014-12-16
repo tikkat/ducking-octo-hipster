@@ -60,6 +60,7 @@ var = char 'x' >-> success X
 
 num :: Parser Expr
 num = pmap Num $ oneOrMore (sat $ \d -> d `elem` ".-0123456789") >*> \ds -> success $ read ds
+-- num = pmap Num $ oneOrMore digit >*> \ds -> ((char '.' >-> oneOrMore digit >*> \dss -> success (read (ds ++ '.':dss))) +++ success (read ds))
 
 expr    = foldr1 Add `pmap` chain term (char '+')
 term    = foldr1 Mul `pmap` chain factor (char '*')
