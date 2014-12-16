@@ -12,14 +12,14 @@ import Expr
 canWidth  = 1000
 canHeight = 300
 
-scale = 0.04
+baseScale = 0.04
 
 readAndDraw :: Elem -> Elem -> Canvas -> IO ()
 readAndDraw expInput scaleInput can = do
   exp           <- getProp expInput "value"
-  inputScale    <- getProp scaleInput "value"
+  scale         <- getProp scaleInput "value"
   let exp'      = readExpr exp
-  let allPoints = if isJust exp' then points (fromJust exp') (scale / read inputScale) (canWidth, canHeight) else []
+  let allPoints = if isJust exp' then points (fromJust exp') (baseScale / read scale) (canWidth, canHeight) else []
   render can $ stroke $ path allPoints
 
 readAndDifferentiate :: Elem -> Elem -> Canvas -> IO ()
@@ -40,7 +40,7 @@ main = do
 
   canvas <- newCanvas canWidth canHeight
 
-  (expElem, expInput) <- newInput "sinx" "f(x) ="
+  (expElem, expInput) <- newInput "2*sin(0.1*x*x)" "f(x) ="
   (scaleElem, scaleInput) <- newInput "1" "Scale:"
   (sliderElem, sliderInput) <- newSlider "1" "0.05" "5" "0.05"
 
@@ -72,6 +72,11 @@ main = do
     readAndDraw expInput sliderInput can
     val <- getProp sliderInput "value"
     setProp scaleInput "value" val
+
+-- DESIGN BELOW
+
+select :: Elem -> IO ()
+select = ffi $ toJSStr "(function(e) {e.select();})"
 
 newCanvas :: Int -> Int -> IO Elem
 newCanvas width height = do
@@ -167,6 +172,3 @@ newHeader text = do
   setStyle header "font-size" "50px"
   setStyle header "color" "#666"
   return header
-
-select :: Elem -> IO ()
-select = ffi $ toJSStr "(function(e) {e.select();})"
