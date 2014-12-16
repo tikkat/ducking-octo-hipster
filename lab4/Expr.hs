@@ -4,8 +4,6 @@ import Parsing
 import Data.Char
 import Data.Maybe
 
---import ExprQC
-
 data Expr
   = Num   Double
   | Add   Expr Expr
@@ -15,6 +13,7 @@ data Expr
   | X
   deriving Eq
 
+-- Produce a nice string representation of an expression.
 showExpr :: Expr -> String
 showExpr X          = "x"
 showExpr (Num n)    = show n
@@ -23,16 +22,20 @@ showExpr (Mul e e') = showFactor e ++ " * " ++ showFactor e'
 showExpr (Sin e)    = "sin "  ++ showFunc e
 showExpr (Cos e)    = "cos "  ++ showFunc e
 
-showFactor (Add e e') = "(" ++ showExpr (Add e e') ++ ")"
+-- Only add parenthesis when we need them.
+showFactor e@(Add _ _) = addParenthesis e
 showFactor e          = showExpr e
 
-showFunc (Add e e') = "(" ++ showExpr (Add e e') ++ ")"
-showFunc (Mul e e') = "(" ++ showExpr (Mul e e') ++ ")"
-showFunc e          = showExpr e
+-- Only add parenthesis when we need them.
+showFunc e@(Mul _ _) = addParenthesis e
+showFunc e = showFactor e
+
+addParenthesis e = "(" ++ showExpr e ++ ")"
 
 instance Show Expr where
   show = showExpr
 
+-- Given an expression and a value for x, calculate the result
 eval :: Expr -> Double -> Double
 eval X          x = x
 eval (Num n)    _ = n
@@ -41,7 +44,7 @@ eval (Mul e e') x = eval e x * eval e' x
 eval (Sin e)    x = sin $ eval e x
 eval (Cos e)    x = cos $ eval e x
 
--- PARSER
+-- ### PARSING
 
 other :: Parser Expr
 other = sin' +++ cos' +++ var +++ num
@@ -63,13 +66,14 @@ term    = foldr1 Mul `pmap` chain factor (char '*')
 factor  = char '(' >-> expr <-< char ')' +++ other
 
 readExpr :: String -> Maybe Expr
-readExpr s =  let s' = filter (not.isSpace) s
-              in case parse expr s' of
-                Just (e, "") -> Just e
-                _            -> Nothing
+readExpr s =  let s' = filter (not.isSpace) s in
+                case parse expr s' of
+                  Just (e, "") -> Just e
+                  _            -> Nothing
 
--- PARSER
+-- ### END PARSING
 
+-- Given an expression, simplify it
 simplify :: Expr -> Expr
 simplify (Add e e') = add (simplify e) (simplify e')
 simplify (Mul e e') = mul (simplify e) (simplify e')
@@ -87,6 +91,7 @@ mul (Num 1) e       = e
 mul e       (Num 1) = e
 mul e1      e2      = Mul e1 e2
 
+-- Given an expression, differentiate it
 differentiate :: Expr -> Expr
 differentiate e = simplify $ differentiate' e
   where
@@ -100,12 +105,9 @@ differentiate e = simplify $ differentiate' e
 
 type Point = (Double, Double)
 
+-- Given an expression, a scaling factor and the height an width for a plotting canvas, 
+-- calculate the resulting set of points 
 points :: Expr -> Double -> (Int, Int) -> [Point]
 points e s (w, h) = [(px, (-(eval e ((px - w' * 0.5) * s)) / s) + h' * 0.5) | px <- [0..w']]
   where w'  = fromIntegral w
         h'  = fromIntegral h
-
-{- FROM FORMULA:
-y = eval exp x
-x = (px - width * 0.5) * scale
-py = (-y / scale) + height * 0.5 -}

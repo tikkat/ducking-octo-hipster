@@ -19,7 +19,7 @@ readAndDraw expInput scaleInput can = do
   exp           <- getProp expInput "value"
   scale         <- getProp scaleInput "value"
   let exp'      = readExpr exp
-  let allPoints = if isJust exp' then points (fromJust exp') (baseScale / read scale) (canWidth, canHeight) else []
+  let allPoints = maybe [] (\e -> points e (baseScale / read scale) (canWidth, canHeight)) exp'
   render can $ stroke $ path allPoints
 
 readAndDifferentiate :: Elem -> Elem -> Canvas -> IO ()
@@ -40,7 +40,7 @@ main = do
 
   canvas <- newCanvas canWidth canHeight
 
-  (expElem, expInput) <- newInput "2*sin(0.1*x*x)" "f(x) ="
+  (expElem, expInput) <- newInput "2 * sin (0.1 * x * x)" "f(x) ="
   (scaleElem, scaleInput) <- newInput "1" "Scale:"
   (sliderElem, sliderInput) <- newSlider "1" "0.05" "5" "0.05"
 
@@ -73,7 +73,7 @@ main = do
     val <- getProp sliderInput "value"
     setProp scaleInput "value" val
 
--- DESIGN BELOW
+-- JUST DESIGN BELOW
 
 select :: Elem -> IO ()
 select = ffi $ toJSStr "(function(e) {e.select();})"
