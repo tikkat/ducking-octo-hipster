@@ -5,26 +5,33 @@ import Data.Char
 import Data.Maybe
 
 data Expr
-  = Num   Double
-  | Bin   String Expr Expr
-  | Func  String Expr
+  = Num     Double
+  | Bin     Op      Expr    Expr
+  | Unary   Func    Expr
   | X
+  deriving Eq
+
+data Op = Add | Mul
+  deriving Eq
+
+data Func = Sin | Cos
   deriving Eq
 
 -- Produce a nice string representation of an expression.
 showExpr :: Expr -> String
 showExpr X              = "x"
 showExpr (Num n)        = show n
-showExpr (Bin "+" e e') = showExpr e ++ " + " ++ showExpr e'
-showExpr (Bin "*" e e') = showFactor e ++ " * " ++ showFactor e'
-showExpr (Func s e)     = s ++ showFunc e
+showExpr (Bin Add e e') = showExpr e ++ " + " ++ showExpr e'
+showExpr (Bin Mul e e') = showFactor e ++ " * " ++ showFactor e'
+showExpr (Unary Sin e)  = "sin" ++ showFunc e
+showExpr (Unary Cos e)  = "cos" ++ showFunc e
 
 -- Only add parenthesis when we need them.
-showFactor e@(Bin "+" _ _)  = addParenthesis e
+showFactor e@(Bin Add _ _)  = addParenthesis e
 showFactor e                = showExpr e
 
 -- Only add parenthesis when we need them.
-showFunc e@(Bin "*" _ _)  = addParenthesis e
+showFunc e@(Bin Mul _ _)  = addParenthesis e
 showFunc e                = showFactor e
 
 addParenthesis e = "(" ++ showExpr e ++ ")"
@@ -36,10 +43,10 @@ instance Show Expr where
 eval :: Expr -> Double -> Double
 eval X              x = x
 eval (Num n)        _ = n
-eval (Bin "+" e e') x = eval e x + eval e' x
-eval (Bin "*" e e') x = eval e x * eval e' x
-eval (Func "sin" e) x = sin $ eval e x
-eval (Func "cos" e) x = cos $ eval e x
+eval (Bin Add e e') x = eval e x + eval e' x
+eval (Bin Mul e e') x = eval e x * eval e' x
+eval (Unary Sin e) x  = sin $ eval e x
+eval (Unary Cos e) x  = cos $ eval e x
 
 -- ### PARSING
 
@@ -47,23 +54,22 @@ other :: Parser Expr
 other = func +++ var +++ num
 
 func :: Parser Expr
-func =  parseString "sin" >-> (pmap (Func "sin") $ factor) +++ 
-        parseString "cos" >-> (pmap (Func "cos") $ factor)
+func =  parseString "sin" >-> pmap (Unary Sin) factor +++
+        parseString "cos" >-> pmap (Unary Cos) factor
 
-parseString :: [Char] -> Parser String
-parseString []      = success "success"
-parseString (x:xs)  = char x >-> parseString xs
+parseString :: String -> Parser String
+parseString xs = foldr ((>->) . char) (success xs) xs
 
 var :: Parser Expr
 var = char 'x' >-> success X
 
 num :: Parser Expr
-num = pmap Num $ oneOrMore (sat (`elem` ".-0123456789")) >*> success.read
--- num = pmap Num $ float +++ pmap negate (char '-' >-> float)
---   where float = oneOrMore digit >*> \ds -> ((char '.' >-> oneOrMore digit >*> \dss -> success (read (ds ++ '.':dss))) +++ success (read ds))
+num = pmap Num $ float +++ pmap negate (char '-' >-> float)
+  where float = oneOrMore digit >*> \is -> ((char '.' >-> oneOrMore digit >*> \ds ->
+                success (read (is ++ '.':ds))) +++ success (read is))
 
-expr    = foldr1 (Bin "+") `pmap` chain term (char '+')
-term    = foldr1 (Bin "*") `pmap` chain factor (char '*')
+expr    = foldr1 (Bin Add) `pmap` chain term (char '+')
+term    = foldr1 (Bin Mul) `pmap` chain factor (char '*')
 factor  = char '(' >-> expr <-< char ')' +++ other
 
 readExpr :: String -> Maybe Expr
@@ -76,31 +82,33 @@ readExpr s =  let s' = filter (not.isSpace) s in
 
 -- Given an expression, simplify it
 simplify :: Expr -> Expr
-simplify (Bin "+" e e') = add (simplify e) (simplify e')
-simplify (Bin "*" e e') = mul (simplify e) (simplify e')
+simplify (Bin Add e e') = add (simplify e) (simplify e')
+simplify (Bin Mul e e') = mul (simplify e) (simplify e')
+simplify (Unary Sin e)  = Unary Sin (simplify e)
+simplify (Unary Cos e)  = Unary Cos (simplify e)
 simplify e              = e
 
 add (Num n) (Num m) = Num (n + m)
 add (Num 0) e       = e
 add e       (Num 0) = e
-add e1      e2      = Bin "+" e1 e2
+add e1      e2      = Bin Add e1 e2
 
 mul (Num n) (Num m) = Num (n * m)
 mul (Num 0) e       = Num 0
 mul e       (Num 0) = Num 0
 mul (Num 1) e       = e
 mul e       (Num 1) = e
-mul e1      e2      = Bin "*" e1 e2
+mul e1      e2      = Bin Mul e1 e2
 
 -- Given an expression, differentiate it
 differentiate :: Expr -> Expr
 differentiate e = simplify $ differentiate' e
   where
     differentiate' :: Expr -> Expr
-    differentiate' (Bin "+" e1 e2)  = add (differentiate' e1) (differentiate' e2)
-    differentiate' (Bin "*" e1 e2)  = add (mul (differentiate' e1) e2) (mul e1 (differentiate' e2))
-    differentiate' (Func "sin" e)   = Bin "*" (differentiate' e) (Func "cos" e)
-    differentiate' (Func "cos" e)   = Bin "*" (Num (-1)) (Func "sin" e)
+    differentiate' (Bin Add e1 e2)  = add (differentiate' e1) (differentiate' e2)
+    differentiate' (Bin Mul e1 e2)  = add (mul (differentiate' e1) e2) (mul e1 (differentiate' e2))
+    differentiate' (Unary Sin e)    = Bin Mul (differentiate' e) (Unary Cos e)
+    differentiate' (Unary Cos e)    = Bin Mul (Num (-1)) (Unary Sin e)
     differentiate' X                = Num 1
     differentiate' _                = Num 0
 

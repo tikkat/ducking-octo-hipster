@@ -15,7 +15,7 @@ prop_showReadExpr e = let s = showExpr e
 prop_simplify :: Expr -> Bool
 prop_simplify e = let e'  = simplify e
                       e'' = simplify e'
-                  in eval e 1 == eval e' 1 && e' == e''
+                  in eval e 2 == eval e' 2 && e' == e''
 
 arbExpr :: Int -> Gen Expr
 arbExpr s = frequency [(2, rNum), (2, return X), (1, rFunc), (s, rOp)]
@@ -27,13 +27,13 @@ arbExpr s = frequency [(2, rNum), (2, return X), (1, rFunc), (s, rOp)]
       return $ Num n
 
     rOp = do 
-      op <- elements [Bin "+", Bin "*"]
+      op <- elements [Bin Add, Bin Mul]
       e1 <- arbExpr s'
       e2 <- arbExpr s'
       return $ op e1 e2
 
     rFunc = do 
-      func <- elements [Func "sin", Func "cos"]
+      func <- elements [Unary Sin, Unary Cos]
       e <- arbExpr s'
       return $ func e
 
