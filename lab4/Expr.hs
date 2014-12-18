@@ -23,8 +23,8 @@ showExpr (Sin e)    = "sin "  ++ showFunc e
 showExpr (Cos e)    = "cos "  ++ showFunc e
 
 -- Only add parenthesis when we need them.
-showFactor e@(Add _ _) = addParenthesis e
-showFactor e          = showExpr e
+showFactor e@(Add _ _)  = addParenthesis e
+showFactor e            = showExpr e
 
 -- Only add parenthesis when we need them.
 showFunc e@(Mul _ _) = addParenthesis e
@@ -47,20 +47,23 @@ eval (Cos e)    x = cos $ eval e x
 -- ### PARSING
 
 other :: Parser Expr
-other = sin' +++ cos' +++ var +++ num
+other = func +++ var +++ num
 
-sin' :: Parser Expr
-sin' = pmap Sin $ char 's' >-> char 'i' >-> char 'n' >-> factor
+func :: Parser Expr
+func =  parseString "sin" >-> (pmap Sin $ factor) +++ 
+        parseString "cos" >-> (pmap Cos $ factor)
 
-cos' :: Parser Expr
-cos' = pmap Cos $ char 'c' >-> char 'o' >-> char 's' >-> factor
+parseString :: [Char] -> Parser String
+parseString [] = success "success"
+parseString (x:xs) = char x >-> parseString xs
 
 var :: Parser Expr
 var = char 'x' >-> success X
 
 num :: Parser Expr
-num = pmap Num $ oneOrMore (sat $ \d -> d `elem` ".-0123456789") >*> \ds -> success $ read ds
--- num = pmap Num $ oneOrMore digit >*> \ds -> ((char '.' >-> oneOrMore digit >*> \dss -> success (read (ds ++ '.':dss))) +++ success (read ds))
+num = pmap Num $ oneOrMore (sat (`elem` ".-0123456789")) >*> success.read
+-- num = pmap Num $ float +++ pmap negate (char '-' >-> float)
+--   where float = oneOrMore digit >*> \ds -> ((char '.' >-> oneOrMore digit >*> \dss -> success (read (ds ++ '.':dss))) +++ success (read ds))
 
 expr    = foldr1 Add `pmap` chain term (char '+')
 term    = foldr1 Mul `pmap` chain factor (char '*')
