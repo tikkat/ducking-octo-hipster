@@ -27,13 +27,13 @@ arbExpr s = frequency [(2, rNum), (2, return X), (1, rFunc), (s, rOp)]
       return $ Num n
 
     rOp = do 
-      op <- elements [Add, Mul]
+      op <- elements [Bin "+", Bin "*"]
       e1 <- arbExpr s'
       e2 <- arbExpr s'
       return $ op e1 e2
 
     rFunc = do 
-      func <- elements [Sin, Cos]
+      func <- elements [Func "sin", Func "cos"]
       e <- arbExpr s'
       return $ func e
 
